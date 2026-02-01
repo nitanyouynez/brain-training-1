@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>4星期大脑训练计划（高中逆袭版）</title>
+<style>
+body {
+    font-family: "Microsoft YaHei", sans-serif;
+    background: #f2f6fa;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
+    margin: 20px 0 5px 0;
+    font-size: 28px;
+    color: #111;
+    font-weight: 600;
+}
+h2 {
+    margin: 0 0 25px 0;
+    font-size: 16px;
+    color: #555;
+    line-height: 1.5;
+}
+
+/* ===== 按钮菜单（蓝色玻璃风格） ===== */
+.menu {
+    display: grid;
+    grid-template-columns: repeat(2, 160px);
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+button {
+    padding: 16px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 12px;
+    border: 1px solid rgba(0,120,255,0.4);
+    background: rgba(0,120,255,0.15);
+    color: #0040c0;
+    font-weight: 500;
+    backdrop-filter: blur(5px);
+    transition: 0.3s;
+    box-shadow: 0 4px 12px rgba(0,120,255,0.2);
+}
+button:hover {
+    border-color: rgba(0,120,255,0.7);
+    color: #0060ff;
+}
+
+/* ===== 游戏区域 ===== */
+#game {
+    margin: 0 auto 30px auto;
+    min-height: 320px;
+    max-width: 500px;
+    background: #fff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    user-select: none;
+}
+
+/* ===== 输入框 ===== */
+input {
+    padding: 8px;
+    font-size: 16px;
+    width: 140px;
+    text-align: center;
+    margin-right: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+/* ===== 网格方格 ===== */
+.grid {
+    display: grid;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 15px;
+}
+.cell {
+    background: transparent;
+    border: 2px solid rgba(0,120,255,0.4);
+    line-height: 60px;
+    font-size: 18px;
+    cursor: pointer;
+    border-radius: 6px;
+    user-select: none;
+    transition: all 0.2s ease;
+    color: #0040c0;
+}
+.cell.active {
+    background: rgba(0,120,255,0.15);
+    border-color: #0060ff;
+    color: #0060ff;
+}
+</style>
+</head>
+<body>
+
+<h1>4星期大脑训练计划（高中逆袭版）</h1>
+<h2>通过科学系统的日常训练，完成涣散到专注的学习变化。<br>
+少年们，少女们，四星期来提升自己的基础状态吧！正确开启新学期的转变！</h2>
+
+<div class="menu">
+    <button onclick="reaction()">反应速度</button>
+    <button onclick="math()">算数训练</button>
+    <button onclick="digitMemory()">数字记忆</button>
+    <button onclick="schulte()">舒尔特方格</button>
+    <button onclick="history()">训练记录</button>
+</div>
+
+<div id="game"></div>
+
+<script>
+const game = document.getElementById("game");
+
+/* ===== 数据记录 ===== */
+function save(type, value) {
+    let data = JSON.parse(localStorage.getItem("records") || "{}");
+    if (!data[type]) data[type] = [];
+    data[type].push(value);
+    localStorage.setItem("records", JSON.stringify(data));
+}
+
+/* ===== 1. 反应速度（修复点击事件） ===== */
+function reaction() {
+    game.innerHTML = "<p>红点消失后，点击下方按钮或任意区域</p>";
+    const dot = document.createElement("div");
+    dot.style.width = "100px";
+    dot.style.height = "100px";
+    dot.style.background = "red";
+    dot.style.borderRadius = "50%";
+    dot.style.margin = "30px auto";
+    game.appendChild(dot);
+
+    const btn = document.createElement("button");
+    btn.textContent = "我点击了！";
+    btn.style.display = "block";
+    btn.style.margin = "20px auto";
+    btn.disabled = true;
+    game.appendChild(btn);
+
+    let start = 0;
+    let clicked = false;
+
+    setTimeout(() => {
+        dot.style.display = "none";
+        btn.disabled = false;
+        start = Date.now();
+
+        function clickHandler() {
+            if (clicked) return;
+            clicked = true;
+            const t = Date.now() - start;
+            save("反应速度", t + " ms");
+            game.innerHTML = `反应时间：<b>${t} ms</b>`;
+            btn.removeEventListener("click", clickHandler);
+        }
+
+        btn.addEventListener("click", clickHandler);
+        // 同时允许点击游戏区域也可以触发
+        game.addEventListener("click", function handler(e) {
+            if (clicked || e.target === btn) return;
+            clicked = true;
+            const t = Date.now() - start;
+            save("反应速度", t + " ms");
+            game.innerHTML = `反应时间：<b>${t} ms</b>`;
+            btn.removeEventListener("click", clickHandler);
+            game.removeEventListener("click", handler);
+        });
+    }, Math.random()*2000+1000);
+}
+
+/* ===== 2. 算数训练 ===== */
+function math() {
+    let correct = 0, total = 0, time = 60;
+    game.innerHTML = `
+        <p id="timer">60 秒</p>
+        <p id="q"></p>
+        <input id="a">
+        <button id="ok">确定</button>
+    `;
+    const q = document.getElementById("q");
+    const a = document.getElementById("a");
+    const ok = document.getElementById("ok");
+    let answer = 0;
+
+    function next() {
+        const x = Math.floor(Math.random()*90+10);
+        const y = Math.floor(Math.random()*9+1);
+        const op = ["+","-","×"][Math.floor(Math.random()*3)];
+        answer = op==="+"?x+y:op==="-"?x-y:x*y;
+        q.textContent = `${x} ${op} ${y}`;
+        a.value="";
+        a.focus();
+    }
+
+    ok.onclick = () => {
+        total++;
+        if(Number(a.value)!==answer) {
+            save("算数训练", correct);
+            game.innerHTML = `答错！本次正确：<b>${correct}</b> / ${total}`;
+            clearInterval(timer);
+            return;
+        }
+        correct++;
+        if(correct>=50) {
+            save("算数训练", correct);
+            game.innerHTML = `恭喜完成50题！本次正确：<b>${correct}</b>`;
+            clearInterval(timer);
+            return;
+        }
+        next();
+    };
+
+    next();
+
+    const timer = setInterval(()=>{
+        time--;
+        document.getElementById("timer").textContent = time+" 秒";
+        if(time===0){
+            clearInterval(timer);
+            save("算数训练", correct);
+            game.innerHTML = `时间到！本次正确：<b>${correct}</b> / ${total}`;
+        }
+    },1000);
+}
+
+/* ===== 3. 数字记忆 ===== */
+function digitMemory() {
+    let level = 1;
+    const maxLevel = 25;
+    game.innerHTML = "<p>记住数字</p>";
+
+    function round() {
+        if(level > maxLevel) {
+            save("数字记忆", maxLevel + " 位");
+            game.innerHTML = `恭喜完成最大挑战！最高记忆：<b>${maxLevel} 位</b>`;
+            return;
+        }
+        const num = Array.from({length: level}, () => Math.floor(Math.random()*10)).join("");
+        game.innerHTML = `<div style="font-size:32px;margin:20px">${num}</div>`;
+
+        setTimeout(() => {
+            game.innerHTML = `
+                <p>请输入刚才的数字</p>
+                <input id="inp">
+                <button id="ok">确认</button>
+            `;
+            const inp = document.getElementById("inp");
+            inp.focus();
+            document.getElementById("ok").onclick = () => {
+                if (inp.value === num) {
+                    level++;
+                    round();
+                } else {
+                    save("数字记忆", level-1 + " 位");
+                    level = 1;
+                    game.innerHTML = `输入错误！重新开始，本次最高：<b>${level-1} 位</b>`;
+                }
+            };
+        }, 2000);
+    }
+    round();
+}
+
+/* ===== 4. 舒尔特方格 ===== */
+function schulte() {
+    const levels = [
+        {size:3, label:"3×3"},
+        {size:4, label:"4×4"},
+        {size:5, label:"5×5"},
+        {size:6, label:"6×6"}
+    ];
+    let curLevel = 0;
+
+    function startLevel() {
+        if(curLevel >= levels.length) {
+            game.innerHTML = "<p>完成所有关卡！</p>";
+            return;
+        }
+        const {size,label} = levels[curLevel];
+        game.innerHTML = `<p>关卡 ${label}：按 1 → ${size*size} 顺序点击</p>`;
+        const grid = document.createElement("div");
+        grid.className = "grid";
+        grid.style.gridTemplateColumns=`repeat(${size},60px)`;
+        game.appendChild(grid);
+
+        let nums=[...Array(size*size).keys()].map(i=>i+1).sort(()=>Math.random()-0.5);
+        let curNum = 1;
+        const startTime = Date.now();
+
+        nums.forEach(n=>{
+            const c=document.createElement("div");
+            c.className="cell";
+            c.textContent=n;
+            c.onclick=()=>{
+                if(n===curNum){
+                    c.classList.add("active");
+                    curNum++;
+                    if(curNum>nums.length){
+                        const t=Math.round((Date.now()-startTime)/1000);
+                        save(`舒尔特方格 ${label}`, t + " 秒");
+                        curLevel++;
+                        startLevel();
+                    }
+                } else {
+                    alert("顺序错误，返回第一关！");
+                    curLevel = 0;
+                    startLevel();
+                }
+            };
+            grid.appendChild(c);
+        });
+    }
+    startLevel();
+}
+
+/* ===== 5. 训练记录 ===== */
+function history() {
+    const data = JSON.parse(localStorage.getItem("records") || "{}");
+    let html = "<h3>训练记录</h3>";
+    if (Object.keys(data).length === 0) {
+        html += "<p>暂无记录</p>";
+    } else {
+        for (let k in data) {
+            html += `<p><b>${k}</b>：</p><ul>`;
+            data[k].forEach(item => html += `<li>${item}</li>`);
+            html += "</ul>";
+        }
+    }
+    game.innerHTML = html;
+}
+</script>
+
+</body>
+</html>
